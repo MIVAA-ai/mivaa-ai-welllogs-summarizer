@@ -1,0 +1,30 @@
+services:
+  watcher:
+    build:
+      context: .
+    container_name: file_watcher
+    command: python -u /app/main.py
+    volumes:
+      - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
+      - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
+      - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/worker/data/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/worker/data/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/worker/data/summary
+    restart: always
+
+  celery:
+    build:
+      context: .
+    container_name: celery_worker
+    command: celery -A worker.tasks worker --loglevel=info
+    depends_on:
+      - watcher
+    volumes:
+      - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
+      - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
+      - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/worker/data/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/worker/data/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/worker/data/summary
+    restart: always
