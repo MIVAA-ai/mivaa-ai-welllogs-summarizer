@@ -14,6 +14,8 @@ from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
 
+from .summarise_task import create_json_summary
+
 # Convert class name string back to class reference
 scanner_classes = {
     WellLogFormat.LAS.value: LasScanner,
@@ -176,7 +178,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         file_logger.info(f"Task completed successfully: {result}")
 
         #this is where you can add the task to summarise the json file
-
+        create_json_summary(result, normalised_json)
 
         # Chain handle_task_completion
         chain(handle_task_completion.s(result=JsonSerializable.to_json(result),
