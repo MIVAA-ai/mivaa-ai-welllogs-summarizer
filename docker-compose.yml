@@ -8,9 +8,9 @@ services:
       - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
       - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
       - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
-      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/worker/data/in
-      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/worker/data/results
-      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/worker/data/summary
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summarise
     restart: always
 
   celery:
@@ -24,7 +24,7 @@ services:
       - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
       - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
       - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
-      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/worker/data/in
-      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/worker/data/results
-      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/worker/data/summary
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summarise
     restart: always

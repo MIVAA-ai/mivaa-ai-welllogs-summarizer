@@ -19,10 +19,11 @@ class DLISScanner:
        Scans a DLIS physical file and processes its logical files.
     """
 
-    def __init__(self, file_path, logical_file, logger):
+    def __init__(self, file_path, logical_file, logger, extract_bulk=False):
         self._file_path = file_path
         self._logical_file = logical_file
         self._logger = logger
+        self._extract_bulk = extract_bulk
 
     def scan(self):
         """
@@ -30,5 +31,5 @@ class DLISScanner:
         """
         self._logger.info(f"Starting scan for logical file {self._logical_file.fileheader.id}")
 
-        logical_file_object = DLISLogicalFile(logical_file=self._logical_file, logger=self._logger)
+        logical_file_object = DLISLogicalFile(logical_file=self._logical_file, logger=self._logger, extract_bulk=self._extract_bulk)
         return logical_file_object.scan_logical_file()

@@ -12,9 +12,10 @@ import numpy as np
 import traceback
 
 class LasScanner:
-    def __init__(self, file, logger):
+    def __init__(self, file, logger, extract_bulk=False):
         self._file = file
         self._logger = logger
+        self._extract_bulk = extract_bulk
 
 
     def scan(self):
@@ -33,7 +34,14 @@ class LasScanner:
             las_headers = self._extract_header(las_file)
             null_value = las_headers.get("null", None)  # Use None if NULL is not defined
             las_curves_headers = self._extract_curve_headers(las_file)
-            las_curves_data = self._extract_bulk_data(las_file, null_value)
+
+
+            #extract bulk data only if the self.extract_bulk is set to True
+            if self._extract_bulk:
+                las_curves_data = self._extract_bulk_data(las_file, null_value)
+            else:
+                las_curves_data = []
+
             las_parameters_data = self._extract_parameter_info(las_file)
 
             # Combine all sections into a single JSON structure

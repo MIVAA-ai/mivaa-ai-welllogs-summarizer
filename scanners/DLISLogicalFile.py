@@ -14,7 +14,7 @@ class DLISLogicalFile:
     Extracts, processes, and transforms origin data using pandas DataFrame.
     """
 
-    def __init__(self, logical_file, logger):
+    def __init__(self, logical_file, logger, extract_bulk):
         """
         Initialize the DLISLogicalFile.
 
@@ -24,6 +24,7 @@ class DLISLogicalFile:
         self._logical_file = logical_file
         self._logical_file_id = logical_file.fileheader.id
         self._logger = logger  # Store the logger
+        self._extract_bulk = extract_bulk
 
     def scan_logical_file(self):
         """
@@ -107,7 +108,12 @@ class DLISLogicalFile:
             )
             channels = channels_processor.extract_channels()
             formatted_channels = transform_curves_to_json_well_log_format(channels, logger=self._logger)
-            curves = channels_processor.extract_bulk_data()
+
+            #extract curves only if extract_bulk is True
+            if self._extract_bulk:
+                curves = channels_processor.extract_bulk_data()
+            else:
+                curves = []
 
             # Combine all data into the frame-specific dictionary
             frame_output = {

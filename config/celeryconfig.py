@@ -8,7 +8,7 @@ import warnings
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # Root directory for storing broker and backend data
-_root = Path(__file__).parent.resolve().joinpath("data")
+_root = Path(__file__).parent.parent.resolve().joinpath("jobs")
 _backend_folder = _root.joinpath("results")
 _backend_folder.mkdir(exist_ok=True, parents=True)
 
@@ -20,19 +20,15 @@ _folders = {
 for folder in _folders.values():
     folder.mkdir(exist_ok=True)
 
-# Create 'summary' folder for the CSV file
-_summary_folder = _root.joinpath("summary")
+# Create 'summarise' folder for the CSV file
+_summary_folder = _root.joinpath("summarise")
 _summary_folder.mkdir(exist_ok=True, parents=True)
 
-# Path for the scanned_file.csv in the 'summary' folder
+# Path for the scanned_file.csv in the 'summarise' folder
 las_csv_path = _summary_folder / "las_scanned_files.csv"
 las_header_file_path = _summary_folder / "las_headers.json"  # Persistent header storage
 dlis_csv_path = _summary_folder / "dlis_scanned_files.csv"
 dlis_header_file_path = _summary_folder / "dlis_headers.json"  # Persistent header storage
-
-# Set the CSV_PATH environment variable
-os.environ["LAS_CSV_PATH"] = str(las_csv_path)
-os.environ["DLIS_CSV_PATH"] = str(dlis_csv_path)
 
 # Celery configuration
 broker_url = "filesystem://localhost//"

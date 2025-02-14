@@ -18,7 +18,7 @@ from utils.logger import Logger
 #                               scanner_cls=LasScanner,
 #                               file_format=WellLogFormat.LAS)
 # print(f"Task submitted for las file {file_full_path}, Task ID: {result}")
-file_full_path = rf'F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\uploads\2_1-A-14_B__WELL_LOG__WL_GR-DEN-NEU_MWD_5.DLIS'
+file_full_path = rf'F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\uploads\2_1-A-14_B__WELL_LOG__WL_GR-DEN-NEU_MWD_5.DLIS'
 # log_filename = f'{os.path.basename(str(file_full_path))}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
 # file_logger = Logger.get_logger(log_filename)
 # file_logger.info(f"New file detected: {file_full_path}")
@@ -39,86 +39,66 @@ for logical_file in logical_files:
 
     print(f'this executed for {logical_file_id}')
     result = convert_to_json_task(filepath=file_full_path,
-                                  output_folder="F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\processed",
+                                  output_folder="F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\processed",
                                   file_format=WellLogFormat.DLIS.value,
                                   logical_file_id=str(logical_file.fileheader.id))
     print(f"Task submitted for logical file {logical_file.fileheader.id} in DLIS file {file_full_path}, Task ID: {result}")
-#
-#
-# # import shutil
-# # import os
-# #
-# # # Define source and destination folders
-# # source_folder = rf"F:\logs-scanner-directory\uploads"  # Change this to your source folder
-# # destination_folder = rf"F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\uploads"  # Change this to your destination folder
-# #
-# # # List of files to copy
-# # files_to_copy = [
-# #     ".azDownload-72597339-e003-ee47-4c61-9a5b191dce38-WL_RAW_PROD_CAL-CCL-ELEM-FLOW-GR_2015-10-27_14.DLIS",
-# #     "1_3-10__WELL_LOG__WL_RAW_GR-REMP_MWD_1.DLIS",
-# #     "1_3-12_S__WELL_LOG__WL_RAW_GR-REMP_MWD_1.DLIS",
-# #     "1_3-7_T2__PETROPHYSICS__L0804CMP.DLIS",
-# #     "1_3-7_T3__PETROPHYSICS__L0804CMP.DLIS",
-# #     "1_3-7_T3__PETROPHYSICS__L0804CPI.DLIS",
-# #     "1_3-7_T3__PETROPHYSICS__L0804CPI__02.DLIS",
-# #     "1_3-7_T3__ROCK_AND_CORE__L0804CPI.DLIS",
-# #     "1_3-7_T3__WELL_LOG__L0804CMP.DLIS",
-# #     "1_3-7_T3__WELL_PATH__L0804CPI.DLIS",
-# #     "1_3-7_T3__WELL_SEISMIC__L0804CPI.DLIS",
-# #     "1_3-7__PETROPHYSICS__L0804CMP.DLIS",
-# #     "1_3-7__PETROPHYSICS__L0804CPI.DLIS",
-# #     "1_3-7__PETROPHYSICS__L0804CPI__02.DLIS",
-# #     "1_3-7__ROCK_AND_CORE__L0804CPI.DLIS",
-# #     "1_3-7__WELL_LOG__L0804CMP.DLIS",
-# #     "1_3-7__WELL_PATH__L0804CPI.DLIS",
-# #     "1_3-7__WELL_SEISMIC__L0804CPI.DLIS",
-# #     "1_3-K-5_A__WELL_LOG__WLC_RAW_DEN-GR-NEU-REMP-SON_MWD_1.DLIS",
-# #     "1_3-K-5_A__WELL_LOG__WL_RAW_DEN-GR-NEU-REMP_MWD_1 - Copy - Copy.DLIS",
-# #     "1_3-K-5_T2__WELL_LOG__WL_RAW_SON_MWD_5.DLIS",
-# #     "watcher.log"
-# # ]
-# #
-# # # Ensure the destination folder exists
-# # os.makedirs(destination_folder, exist_ok=True)
-# #
-# # # Copy each file
-# # for file in files_to_copy:
-# #     source_file = os.path.join(source_folder, file)
-# #     destination_file = os.path.join(destination_folder, file)
-# #
-# #     if os.path.exists(source_file):
-# #         shutil.copy2(source_file, destination_file)  # Preserve metadata
-# #         print(f"Copied: {file}")
-# #     else:
-# #         print(f"File not found: {file}")
-# #
-# # print("File copying process completed.")
-#
-#
+
+# import pandas as pd
+# import tempfile
 # import os
-# import shutil
+# from langchain_community.document_loaders.csv_loader import CSVLoader
 #
-# # Define folders
-# source_folder = rf"F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\processed"  # Folder to get the file list
-# target_folder = rf"F:\logs-scanner-directory\processed"  # Folder to find matching files
-# destination_folder = rf"F:\logs-scanner-directory\test"  # Folder to copy the matched files
+# # Step 1: Load CSV into a DataFrame
+# file_path = r'F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\processed\DLIS_DLISParametersProcessor_summary.csv'
+# df = pd.read_csv(file_path)
 #
-# # Ensure destination folder exists
-# os.makedirs(destination_folder, exist_ok=True)
+# #remove all the columns from dataframe that has all the values as null
+# df = df.dropna(axis=1, how='all')
 #
-# # Get the list of filenames from the source folder
-# file_names = set(os.listdir(source_folder))  # Use set for faster lookup
+# # Step 3: Save processed DataFrame to a temporary CSV file
+# with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_csv:
+#     temp_file_path = temp_csv.name  # Get the temp file path
+#     df.to_csv(temp_file_path, index=False)
 #
-# # Copy matching files from target_folder to destination_folder
-# for file_name in file_names:
-#     source_path = os.path.join(target_folder, file_name)
-#     dest_path = os.path.join(destination_folder, file_name)
+# # Step 4: Load the processed CSV using CSVLoader
+# loader = CSVLoader(file_path=temp_file_path)
+# data = loader.load()
 #
-#     # Check if the file exists in the target folder
-#     if os.path.isfile(source_path):
-#         shutil.copy2(source_path, dest_path)
-#         print(f"Copied: {file_name}")
-#     else:
-#         print(f"Not found: {file_name}")
+# # Step 5: Delete the temporary CSV file after loading
+# os.remove(temp_file_path)
 #
-# print("File copying process completed!")
+
+
+# #working on prompts
+# from langchain_core.prompts import ChatPromptTemplate
+# #trying to instantiate an llm
+# from langchain_openai import AzureChatOpenAI
+# from langchain_core.output_parsers import StrOutputParser
+#
+# map_prompt_template = ChatPromptTemplate.from_messages(
+#     [
+#         ("system", "Your name is mivaa. You need to act like a oil and gas {user_persona} expert. Who has an expertise in well log interpretation and analysis."),
+#         ("human", "Can you summarise following details {user_input} from the {section} of the well log file and also give some insight from the {user_persona} perspective?"),
+#     ]
+# )
+# llm = AzureChatOpenAI(azure_endpoint="https://putc-ds-gpt4.openai.azure.com/",
+#                               api_version= "2024-05-01-preview",
+#                               api_key='2b526c9717d140b2b9dc13405d0f33f2',
+#                               azure_deployment="gpt-4o",
+#                       temperature=0)
+#
+#
+# map_chain = map_prompt_template | llm | StrOutputParser()
+#
+# # Define the values for the template
+# variables = {
+#     "user_persona": "petrophysicist",
+#     "user_input": data[0].page_content,
+#     "section": "parameter"
+# }
+#
+# # Invoke the chain with variables
+# response = map_chain.invoke(variables)
+#
+# print(response)

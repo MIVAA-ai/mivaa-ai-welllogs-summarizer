@@ -20,6 +20,8 @@ scanner_classes = {
     WellLogFormat.DLIS.value: DLISScanner
 }
 
+
+
 def _extract_curve_names(json_data):
     """
     Extracts unique curve names from the given JSON data.
@@ -172,6 +174,10 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         })
 
         file_logger.info(f"Task completed successfully: {result}")
+
+        #this is where you can add the task to summarise the json file
+
+
         # Chain handle_task_completion
         chain(handle_task_completion.s(result=JsonSerializable.to_json(result),
                                        log_filename=log_filename,
@@ -183,4 +189,8 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         result["message"] = f"Error processing {file_format} file: {str(e)}"
         file_logger.error(f"Error processing {file_format} file: {e}")
         file_logger.debug(traceback.format_exc())
+        # Chain handle_task_completion
+        chain(handle_task_completion.s(result=JsonSerializable.to_json(result),
+                                       log_filename=log_filename,
+                                       initial_task_id=self.request.id)).apply_async()
         return result

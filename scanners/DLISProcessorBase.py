@@ -27,7 +27,7 @@ class DLISProcessorBase:
         Processes the items into a DataFrame and converts to a JSON-like format.
 
         Args:
-            attributes (dict): Mapping of attributes for the summary DataFrame.
+            attributes (dict): Mapping of attributes for the summarise DataFrame.
             units_relevant_columns (list): List of columns for which to extract units.
 
         Returns:
@@ -42,7 +42,7 @@ class DLISProcessorBase:
 
         self._logger.info(f"Processing items for {caller_class} in logical file: {self._logical_file_id}")
 
-        # Create a DataFrame using the summary function
+        # Create a DataFrame using the summarise function
         items_df = summary_dataframe(self._items, self._logger, **attributes)
 
         if items_df.empty:
@@ -76,6 +76,9 @@ class DLISProcessorBase:
 
             # Clean and deduplicate the DataFrame
             items_df = process_dataframe_lists(items_df, logger=self._logger)
+
+            #exporting the csv for summarizing the data
+            items_df.to_csv(f"F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\processed\DLIS_{caller_class}_summary.csv", index=False)
 
             self._logger.info(
                 f"Successfully processed items for {caller_class} in logical file: {self._logical_file_id}")

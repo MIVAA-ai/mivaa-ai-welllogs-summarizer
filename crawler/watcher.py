@@ -3,7 +3,7 @@ import time
 import os
 from dlisio import dlis
 from worker.tasks import convert_to_json_task
-from .crawlerconfig import CRAWLER_CONFIG
+from config.crawlerconfig import CRAWLER_CONFIG
 from utils.IdentifyWellLogFormat import IdentifyWellLogFormat
 from mappings.WellLogsFormat import WellLogFormat
 import traceback
