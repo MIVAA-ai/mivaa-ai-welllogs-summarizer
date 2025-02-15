@@ -1,7 +1,8 @@
 import json
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from config.llmconfig import get_active_llm
+from config.llm_config import get_active_llm
+from utils.prompt_library import get_prompt_template
 
 def _remove_null_values(d):
     """
@@ -30,12 +31,7 @@ def create_json_summary(result, data):
 
     llm = get_active_llm()
 
-    paragraph_prompt_template = ChatPromptTemplate.from_messages(
-        [
-            ("system", "Your name is mivaa an AI assistant. You need to act like a oil and gas upstream industry domain expert. Who has an expertise in well log interpretation and analysis."),
-            ("human", "Can you summarise following details {user_input} from the {section} of the {file_format} well log file in a paragraphs?"),
-        ]
-    )
+    paragraph_prompt_template = get_prompt_template("dlis_header_paragraph_summary")
 
     paragraph_chain = paragraph_prompt_template | llm | StrOutputParser()
 
