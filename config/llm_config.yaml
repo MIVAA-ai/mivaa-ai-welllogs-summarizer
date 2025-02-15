@@ -1,0 +1,10 @@
+llm:
+  provider: ollama  # Options: AzureChatOpenAI, ChatOllama
+
+  azure:
+    temperature: 0.2  # Other Azure-specific params
+
+  ollama:
+    model: "llama3.2:3b"
+    temperature: 0
+#    num_predict: 256

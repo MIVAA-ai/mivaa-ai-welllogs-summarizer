@@ -1,14 +1,7 @@
 import json
-import os
-from langchain_openai import AzureChatOpenAI
-from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-
-load_dotenv(dotenv_path=r'F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\config\credentials.env')
-os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
-os.environ['LANGCHAIN_PROJECT'] = os.getenv('LANGCHAIN_PROJECT')
-os.environ['LANGCHAIN_TRACING_V2'] = os.getenv('LANGCHAIN_TRACING_V2')
+from config.llmconfig import get_active_llm
 
 def _remove_null_values(d):
     """
@@ -35,11 +28,7 @@ def create_json_summary(result, data):
     print("\n===== Data Summary =====")
     print(json.dumps(data, indent=4, sort_keys=False))
 
-    llm = AzureChatOpenAI(azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
-                          api_version= os.getenv('AZURE_OPENAI_VERSION'),
-                          api_key=os.getenv('AZURE_OPENAI_API_KEY'),
-                          azure_deployment=os.getenv('AZURE_OPENAI_DEPLOYMENT'),
-                          temperature=0)
+    llm = get_active_llm()
 
     paragraph_prompt_template = ChatPromptTemplate.from_messages(
         [
@@ -57,9 +46,8 @@ def create_json_summary(result, data):
         "file_format": "DLIS"
     }
 
+
     # Invoke the chain with variables
     response = paragraph_chain.invoke(variables)
 
     print(response)
-
-    get started with ollama
