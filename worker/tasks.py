@@ -1,6 +1,6 @@
 from . import app
 from utils.SerialiseJson import JsonSerializable
-from worker.result_handler import handle_task_completion
+from worker.update_to_csv import update_to_csv
 from celery import chain
 import os
 from pathlib import Path
@@ -14,7 +14,7 @@ from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
 
-from .summarise_task import create_json_summary
+from .summarise_task import json_to_text
 
 # Convert class name string back to class reference
 scanner_classes = {
@@ -178,12 +178,12 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         file_logger.info(f"Task completed successfully: {result}")
 
         #this is where you can add the task to summarise the json file
-        create_json_summary(result, normalised_json)
+        json_to_text(result, normalised_json)
 
         # Chain handle_task_completion
-        chain(handle_task_completion.s(result=JsonSerializable.to_json(result),
-                                       log_filename=log_filename,
-                                       initial_task_id=self.request.id)).apply_async()
+        chain(update_to_csv.s(result=JsonSerializable.to_json(result),
+                              log_filename=log_filename,
+                              initial_task_id=self.request.id)).apply_async()
         return result
 
     except Exception as e:
@@ -192,7 +192,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         file_logger.error(f"Error processing {file_format} file: {e}")
         file_logger.debug(traceback.format_exc())
         # Chain handle_task_completion
-        chain(handle_task_completion.s(result=JsonSerializable.to_json(result),
-                                       log_filename=log_filename,
-                                       initial_task_id=self.request.id)).apply_async()
+        chain(update_to_csv.s(result=JsonSerializable.to_json(result),
+                              log_filename=log_filename,
+                              initial_task_id=self.request.id)).apply_async()
         return result

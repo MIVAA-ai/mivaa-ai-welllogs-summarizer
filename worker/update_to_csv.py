@@ -3,7 +3,7 @@ from utils.logger import Logger
 from summarise.CSVSummary import CSVSummary
 
 @app.task(bind=True)
-def handle_task_completion(self, result, log_filename, initial_task_id=None):
+def update_to_csv(self, result, log_filename, initial_task_id=None):
     """
     Handle the completion of a task by updating the CSV file.
     This function is chained to run after `convert_las_to_json_task`.
