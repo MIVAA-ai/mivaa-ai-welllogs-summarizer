@@ -4,19 +4,18 @@ from worker.tasks import convert_to_json_task
 from datetime import datetime
 import os
 from utils.logger import Logger
-#
-# #pending work to be done before release
-# # change the checksum logic to calculate on output files - done
-# # change the print to logger - done
-# # add traceback to exceptions - done
+
+#pending work to be done before release
+# change the checksum logic to calculate on output files - done
+# change the print to logger - done
+# add traceback to exceptions - done
 # add for csv updates in task.py for failed
-#
+
 # file_full_path = rf'F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\samples\11_30a-_9Z_dwl_DWL_WIRE_238615014.las'
 #
 # result = convert_to_json_task(filepath=file_full_path,
-#                               output_folder="F:\PyCharmProjects\mivaa-las-dlis-to-json-convertor\processed",
-#                               scanner_cls=LasScanner,
-#                               file_format=WellLogFormat.LAS)
+#                               output_folder="F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\processed",
+#                               file_format=WellLogFormat.LAS.value)
 # print(f"Task submitted for las file {file_full_path}, Task ID: {result}")
 file_full_path = rf'F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\uploads\2_1-A-14_B__WELL_LOG__WL_GR-DEN-NEU_MWD_5.DLIS'
 # log_filename = f'{os.path.basename(str(file_full_path))}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'

@@ -2,4 +2,4 @@ output:
   csv_file: true
   json_file: true
   text_interpretation: true
-  extract_bulk: true
+  extract_bulk: false

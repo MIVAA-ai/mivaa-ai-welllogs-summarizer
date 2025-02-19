@@ -1,6 +1,5 @@
 from config.config_exceptions import ConfigLoadError
 from config.app_config import get_output_settings
-from scanners.test import result
 from . import app
 from utils.SerialiseJson import JsonSerializable
 import os
@@ -15,7 +14,6 @@ from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
 from summarise.CSVSummary import CSVSummary
-from .summarise_task import json_to_text
 
 # Convert class name string back to class reference
 scanner_classes = {
@@ -91,15 +89,9 @@ def _update_to_csv(file_logger, result):
         csv_summary = CSVSummary(result=result, file_logger=file_logger)
         csv_summary.update_csv()
         file_logger.info(f"CSV updated with task result: {result}")
-
-        #updating the results for status
-        result['message'] = result['message'] + '. CSV updated successfully'
-
-        # Return a meaningful status
         return result
     except Exception as e:
         file_logger.error(f"Error updating CSV: {e}")
-        result['message'] = result['message'] + f'. Error updating CSV: {e}'
         return result
 
 @app.task(bind=True)
@@ -119,6 +111,9 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
     """
     # instantiating a logger for each file
     # Initialize basic result structure
+    filepath = Path(filepath).resolve()
+    output_folder = Path(output_folder).resolve()
+
     result = {
         "status": "ERROR",
         "task_id": self.request.id,
@@ -137,9 +132,6 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         f"Task received for processing: {filepath}, Format: {file_format}, Logical File ID: {logical_file_id}")
 
     try:
-        filepath = Path(filepath).resolve()
-        output_folder = Path(output_folder).resolve()
-
         # Load Output Configuration from app_config.yaml
         output_settings = get_output_settings(file_logger)
         csv_output = output_settings["csv_file"]
@@ -185,9 +177,10 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
             file_logger.info(f"Scanning {file_format} file: {filepath}{f' (Logical File: {logical_file_id})' if logical_file else ''}...")
 
             # Initialize scanner
-            scanner = scanner_cls(file=filepath, logger=file_logger) if not logical_file else scanner_cls(file_path=filepath,
+            scanner = scanner_cls(file=filepath, logger=file_logger, extract_bulk=extract_bulk) if not logical_file else scanner_cls(file_path=filepath,
                                                                                       logical_file=logical_file,
-                                                                                      logger=file_logger)
+                                                                                      logger=file_logger,
+                                                                                      extract_bulk=extract_bulk)
             normalised_json = scanner.scan()
 
 
@@ -198,7 +191,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                 file_logger.info(f"Updating the result headers because text summarisation of output to csv is enabled")
                 # Extract Curve Names
                 result["Curve Names"] = _extract_curve_names(normalised_json)
-                # Consolidate Headers
+                # Consolidate Headers to include the headers in results.json
                 consolidated_header = _consolidate_headers(normalised_json)
                 # Merge result and dynamic headers
                 result.update(consolidated_header)
@@ -223,18 +216,22 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                     "message": f"File processed successfully and converted to json: {filepath}",
                 })
 
-                file_logger.info(f"Task partially completed: {result}")
-
-            #update the csv only if csv output is enabled
-            if csv_output:
-                result = _update_to_csv(result=result,
-                               file_logger=file_logger)
+                result["status"] = "PARTIALLY SUCCESS"
+                file_logger.info(f"File converted to JSON: {result}")
 
             #this is where you can add the task to summarise the json file
             if text_interpretation:
                 #load llm settings
                 # result = json_to_text(result, normalised_json)
                 pass
+
+            #setting the status as successful if everything is executed sucessfully
+            result["status"] = "SUCCESS"
+
+            #update the csv only if csv output is enabled
+            if csv_output:
+                result = _update_to_csv(result=result,
+                               file_logger=file_logger)
 
             return result
 
