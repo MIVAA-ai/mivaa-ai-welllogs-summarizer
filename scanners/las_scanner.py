@@ -5,7 +5,7 @@
 import lasio
 import lasio.examples
 from mappings.HeaderMappings import HeaderMapping
-from utils.DateUtils import DateUtils
+from utils.date_utils import DateUtils
 from pathlib import Path
 from pydantic import ValidationError
 import numpy as np

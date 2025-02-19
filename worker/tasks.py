@@ -1,7 +1,8 @@
+from config.config_exceptions import ConfigLoadError
+from config.app_config import get_output_settings
+from scanners.test import result
 from . import app
 from utils.SerialiseJson import JsonSerializable
-from worker.update_to_csv import update_to_csv
-from celery import chain
 import os
 from pathlib import Path
 from utils.file_creation_time import get_file_creation_time
@@ -13,7 +14,7 @@ from scanners.dlis_scanner import DLISScanner
 from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
-
+from summarise.CSVSummary import CSVSummary
 from .summarise_task import json_to_text
 
 # Convert class name string back to class reference
@@ -40,7 +41,6 @@ def _extract_curve_names(json_data):
         curve_names.update(curve.get("name", "Unknown") for curve in curves)
 
     return ", ".join(curve_names) if curve_names else "None"
-
 
 def _consolidate_headers(json_data):
     """
@@ -77,6 +77,31 @@ def _consolidate_headers(json_data):
 
     return consolidated_header
 
+def _update_to_csv(file_logger, result):
+    """
+    Handle the completion of a task by updating the CSV file.
+    This function is chained to run after `convert_las_to_json_task`.
+    """
+    try:
+        # Ensure result is a dictionary
+        if not isinstance(result, dict):
+            raise ValueError(f"Expected result to be a dict, got {type(result).__name__}")
+
+        # Update the CSV file
+        csv_summary = CSVSummary(result=result, file_logger=file_logger)
+        csv_summary.update_csv()
+        file_logger.info(f"CSV updated with task result: {result}")
+
+        #updating the results for status
+        result['message'] = result['message'] + '. CSV updated successfully'
+
+        # Return a meaningful status
+        return result
+    except Exception as e:
+        file_logger.error(f"Error updating CSV: {e}")
+        result['message'] = result['message'] + f'. Error updating CSV: {e}'
+        return result
+
 @app.task(bind=True)
 def convert_to_json_task(self, filepath, output_folder, file_format, logical_file_id=None):
     """
@@ -93,34 +118,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         dict: Result metadata of processing
     """
     # instantiating a logger for each file
-    log_filename = f'{os.path.basename(str(filepath))}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
-    file_logger = Logger(log_filename).get_logger()
-
-    file_logger.info(f"Task received for processing: {filepath}, Format: {file_format}, Logical File ID: {logical_file_id}")
-
-    filepath = Path(filepath).resolve()
-    output_folder = Path(output_folder).resolve()
-
-    creation_time = get_file_creation_time(filepath=filepath, file_logger=file_logger)
-    logical_file = None
-
-    # DLIS-specific metadata
-    if file_format == WellLogFormat.DLIS.value and logical_file_id is not None:
-        logical_files = dlis.load(filepath)
-        for single_logical_file in logical_files:
-            try:
-                if str(single_logical_file.fileheader.id) == logical_file_id:
-                    logical_file = single_logical_file
-            except Exception as e:
-                file_logger.error(f"Error accessing logical file header in {filepath}: {e}")
-                continue  # Skip this logical file but continue processing others
-
-
-    output_filename_suffix = logical_file_id if logical_file_id else ""
-    output_filename = f"{filepath.stem}{output_filename_suffix}.json"
-    output_file_path = output_folder / output_filename
-
-    # Initialize result structure
+    # Initialize basic result structure
     result = {
         "status": "ERROR",
         "task_id": self.request.id,
@@ -128,71 +126,139 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         "input_file_format": file_format,
         "input_file_path": str(filepath),
         "input_file_size": os.path.getsize(filepath) if filepath.exists() else "N/A",
-        "input_file_creation_date": creation_time,
         "input_file_creation_user": "Unknown",
-        "output_file": str(output_file_path),
-        "output_file_checksum": "Unknown",
-        "output_file_size": "Unknown",
         "message": "An error occurred during processing.",
     }
 
+    log_filename = f'{os.path.basename(str(filepath))}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+    file_logger = Logger(log_filename).get_logger()
+
+    file_logger.info(
+        f"Task received for processing: {filepath}, Format: {file_format}, Logical File ID: {logical_file_id}")
+
     try:
-        scanner_cls = scanner_classes[file_format]  # Retrieve actual class
+        filepath = Path(filepath).resolve()
+        output_folder = Path(output_folder).resolve()
 
-        file_logger.info(f"Scanning {file_format} file: {filepath}{f' (Logical File: {logical_file_id})' if logical_file else ''}...")
+        # Load Output Configuration from app_config.yaml
+        output_settings = get_output_settings(file_logger)
+        csv_output = output_settings["csv_file"]
+        json_output = output_settings["json_file"]
+        text_interpretation = output_settings["text_interpretation"]
+        extract_bulk = output_settings["extract_bulk"]
 
-        # Initialize scanner
-        scanner = scanner_cls(file=filepath, logger=file_logger) if not logical_file else scanner_cls(file_path=filepath,
-                                                                                  logical_file=logical_file,
-                                                                                  logger=file_logger)
-        normalised_json = scanner.scan()
+        #getting some parameters like file creation time and instantiating logical file
+        result['input_file_creation_date'] = get_file_creation_time(filepath=filepath, file_logger=file_logger)
+        logical_file = None
 
-        # Extract Curve Names
-        result["Curve Names"] = _extract_curve_names(normalised_json)
+        # DLIS-specific metadata
+        if file_format == WellLogFormat.DLIS.value and logical_file_id is not None:
+            logical_files = dlis.load(filepath)
+            for single_logical_file in logical_files:
+                try:
+                    if str(single_logical_file.fileheader.id) == logical_file_id:
+                        logical_file = single_logical_file
+                except Exception as e:
+                    file_logger.error(f"Error accessing logical file header in {filepath}: {e}")
+                    continue  # Skip this logical file but continue processing others
 
-        # Consolidate Headers
-        consolidated_header = _consolidate_headers(normalised_json)
 
-        # Merge result and dynamic headers
-        result.update(consolidated_header)
+        output_filename_suffix = logical_file_id if logical_file_id else ""
+        output_interpreted_txt_filename = f"{filepath.stem}{output_filename_suffix}.txt"
+        output_json_filename = f"{filepath.stem}{output_filename_suffix}.json"
+        output_interpreted_text_file_path = output_folder / output_interpreted_txt_filename
+        output_json_file_path = output_folder / output_json_filename
 
-        # Serialize JSON data
-        file_logger.info(f"Serializing scanned data from {filepath}...")
-        json_bytes = JsonSerializable.to_json_bytes(normalised_json)
+        #updating the result based on the config
+        if json_output:
+            result["output_json_file"] = str(output_json_file_path)
+            result["output_json_file_checksum"] = "Unknown"
+            result["output_json_file_size"] = "Unknown"
 
-        # Save JSON to file
-        file_logger.info(f"Saving JSON data to {output_file_path}...")
-        with open(output_file_path, "wb") as json_file:
-            json_file.write(json_bytes)
+        if text_interpretation:
+            result["output_ai_interpreted_text_file"] = str(output_interpreted_text_file_path)
+            result["output_ai_interpreted_text_file_size"] = "Unknown"
 
-        # Calculate checksum of the output JSON file
-        checksum = calculate_json_checksum(output_file_path)
+        try:
+            scanner_cls = scanner_classes[file_format]  # Retrieve actual class
 
-        result.update({
-            "status": "SUCCESS",
-            "output_file_checksum": checksum,
-            "output_file_size": os.path.getsize(output_file_path) if output_file_path.exists() else "N/A",
-            "message": f"File processed successfully: {filepath}",
-        })
+            file_logger.info(f"Scanning {file_format} file: {filepath}{f' (Logical File: {logical_file_id})' if logical_file else ''}...")
 
-        file_logger.info(f"Task completed successfully: {result}")
+            # Initialize scanner
+            scanner = scanner_cls(file=filepath, logger=file_logger) if not logical_file else scanner_cls(file_path=filepath,
+                                                                                      logical_file=logical_file,
+                                                                                      logger=file_logger)
+            normalised_json = scanner.scan()
 
-        #this is where you can add the task to summarise the json file
-        json_to_text(result, normalised_json)
 
-        # Chain handle_task_completion
-        chain(update_to_csv.s(result=JsonSerializable.to_json(result),
-                              log_filename=log_filename,
-                              initial_task_id=self.request.id)).apply_async()
-        return result
+            """updating the results with some more metadata like curve names in the data 
+            and any other header information present in the file, so that it can be updated in csv later 
+            and also be used for text summarisation using llm"""
+            if csv_output or text_interpretation:
+                file_logger.info(f"Updating the result headers because text summarisation of output to csv is enabled")
+                # Extract Curve Names
+                result["Curve Names"] = _extract_curve_names(normalised_json)
+                # Consolidate Headers
+                consolidated_header = _consolidate_headers(normalised_json)
+                # Merge result and dynamic headers
+                result.update(consolidated_header)
+                file_logger.info(f"Updated the result headers because text summarisation of output to csv is enabled")
 
-    except Exception as e:
-        result["status"] = "FAILED"
+            # Serialize JSON data and store it in the json file if the configuration is set
+            if json_output:
+                file_logger.info(f"Serializing scanned data from {filepath}...")
+                json_bytes = JsonSerializable.to_json_bytes(normalised_json)
+
+                # Save JSON to file
+                file_logger.info(f"Saving JSON data to {output_json_file_path}...")
+                with open(output_json_file_path, "wb") as json_file:
+                    json_file.write(json_bytes)
+
+                # Calculate checksum of the output JSON file
+                checksum = calculate_json_checksum(output_json_file_path)
+
+                result.update({
+                    "output_json_file_checksum": checksum,
+                    "output_json_file_size": os.path.getsize(output_json_file_path) if output_json_file_path.exists() else "N/A",
+                    "message": f"File processed successfully and converted to json: {filepath}",
+                })
+
+                file_logger.info(f"Task partially completed: {result}")
+
+            #update the csv only if csv output is enabled
+            if csv_output:
+                result = _update_to_csv(result=result,
+                               file_logger=file_logger)
+
+            #this is where you can add the task to summarise the json file
+            if text_interpretation:
+                #load llm settings
+                # result = json_to_text(result, normalised_json)
+                pass
+
+            return result
+
+        except Exception as e:
+            result["status"] = "ERROR"
+            result["message"] = f"Error processing {file_format} file: {str(e)}"
+            file_logger.error(f"Error processing {file_format} file: {e}")
+            file_logger.debug(traceback.format_exc())
+
+            if csv_output:
+                result = _update_to_csv(result=result,
+                                        file_logger=file_logger)
+
+            return result
+    except ConfigLoadError as e:
+        result["status"] = "ERROR"
         result["message"] = f"Error processing {file_format} file: {str(e)}"
         file_logger.error(f"Error processing {file_format} file: {e}")
         file_logger.debug(traceback.format_exc())
-        # Chain handle_task_completion
-        chain(update_to_csv.s(result=JsonSerializable.to_json(result),
-                              log_filename=log_filename,
-                              initial_task_id=self.request.id)).apply_async()
+        return result
+
+    except Exception as e:
+        result["status"] = "ERROR"
+        result["message"] = f"Error processing {file_format} file: {str(e)}"
+        file_logger.error(f"Error processing {file_format} file: {e}")
+        file_logger.debug(traceback.format_exc())
         return result
