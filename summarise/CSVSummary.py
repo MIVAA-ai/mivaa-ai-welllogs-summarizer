@@ -84,7 +84,7 @@ class CSVSummary:
         # Append the row to the CSV file
         with open(csv_path, mode="a", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=global_headers)
-            writer.writeheader()
+            # writer.writeheader()
             writer.writerow(self._result)
             self._file_logger.info("Appended new row to CSV.")
 

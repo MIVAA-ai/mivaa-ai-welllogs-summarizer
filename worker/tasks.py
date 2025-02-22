@@ -1,5 +1,5 @@
 from config.config_exceptions import ConfigLoadError
-from config.app_config import get_output_settings
+from config.config_loader import get_output_settings
 from . import app
 from utils.SerialiseJson import JsonSerializable
 import os
@@ -14,6 +14,7 @@ from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
 from summarise.CSVSummary import CSVSummary
+from summarise.WellLogTextInterpretation import InterpretWellLog
 
 # Convert class name string back to class reference
 scanner_classes = {
@@ -221,9 +222,12 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
 
             #this is where you can add the task to summarise the json file
             if text_interpretation:
-                #load llm settings
-                # result = json_to_text(result, normalised_json)
-                pass
+                interpreted_text = InterpretWellLog(
+                    result=result,
+                    json_data=normalised_json,
+                    logger=file_logger
+                )
+                interpreted_text.json_to_text()
 
             #setting the status as successful if everything is executed sucessfully
             result["status"] = "SUCCESS"

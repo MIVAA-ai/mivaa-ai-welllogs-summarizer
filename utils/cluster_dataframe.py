@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import traceback
 
-def cluster_dataframe(df, subsection_name, cluster_columns, max_k=20, subcluster_threshold=15):
+def cluster_dataframe(logger, df, subsection_name, cluster_columns, max_k=20, subcluster_threshold=15):
     try:
         """
         Automatically detects the optimal number of clusters, assigns cluster labels,
@@ -22,12 +22,12 @@ def cluster_dataframe(df, subsection_name, cluster_columns, max_k=20, subcluster
             pd.DataFrame: The refined DataFrame with an updated 'cluster' column.
         """
         if df.empty:
-            print(f"The DataFrame is empty for {subsection_name}. Clustering will not be performed.")
+            logger.info(f"The DataFrame is empty for {subsection_name}. Clustering will not be performed.")
             return df  # Return the empty DataFrame as is
 
         # Ensure there are enough samples to perform clustering
         if len(df) < 2:
-            print(f"Not enough samples for {subsection_name} to perform clustering.")
+            logger.info(f"Not enough samples for {subsection_name} to perform clustering.")
             df["cluster"] = 0
             return df
 
@@ -36,12 +36,12 @@ def cluster_dataframe(df, subsection_name, cluster_columns, max_k=20, subcluster
 
         # If no valid columns exist, set a default value
         if valid_columns.empty:
-            print(f"Valid columns are not present for clustering {subsection_name}.")
+            logger.info(f"Valid columns are not present for clustering {subsection_name}.")
             df["cluster"] = 0
             return df
         else:
             if set(valid_columns) != set(cluster_columns):
-                print(f"All the columns are not present for clustering {subsection_name}. Using valid columns only.")
+                logger.info(f"All the columns are not present for clustering {subsection_name}. Using valid columns only.")
 
             df['cluster_text_param'] = df[valid_columns].astype(str).agg(' '.join, axis=1)
 
@@ -67,12 +67,12 @@ def cluster_dataframe(df, subsection_name, cluster_columns, max_k=20, subcluster
                     break  # Stop clustering if only one cluster is formed
 
             except Exception as e:
-                print(f"Skipping k={k} for {subsection_name} due to error: {str(e)}")
+                logger.info(f"Skipping k={k} for {subsection_name} due to error: {str(e)}")
                 break
 
         # Handle case where no valid clustering was performed
         if not wcss:
-            print(f"Clustering failed for {subsection_name}. Assigning single cluster.")
+            logger.info(f"Clustering failed for {subsection_name}. Assigning single cluster.")
             df["cluster"] = 0
             df.drop(columns=['cluster_text_param'], inplace=True)
             return df
@@ -112,6 +112,5 @@ def cluster_dataframe(df, subsection_name, cluster_columns, max_k=20, subcluster
 
         return df
     except Exception as e:
-        print(f"Error in cluster_dataframe for {subsection_name}: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Error in cluster_dataframe for {subsection_name}: {str(e)}")
         return pd.DataFrame()

@@ -1,0 +1,22 @@
+output:
+  csv_file: true
+  json_file: true
+  text_interpretation: true
+  extract_bulk: false
+
+llm:
+  provider: ChatOllama  # Options: AzureChatOpenAI, ChatOllama
+  azure:
+    temperature: 0  # Other Azure-specific params
+  ollama:
+    model: "llama3.2:3b"
+    temperature: 0
+#    num_predict: 256
+
+prompts:
+  dlis_header_paragraph_summary:
+    system: "Your name is Mivaa, an AI assistant. You are an oil and gas upstream industry expert with expertise in well log interpretation and analysis. Give output only in paragraphs. No bullet pointers."
+    human: "Can you summarize the following details {user_input} from the headers of the one of the logical file from DLIS well log file in paragraphs. Do not miss any key value pair to summarise from the information provided."
+  dlis_sections_paragraph_summary:
+    system: "Your name is Mivaa, an AI assistant. You are an oil and gas upstream industry expert with expertise in well log interpretation and analysis. Give output only in paragraphs. No bullet pointers. Do not miss any detail during summarisation."
+    human: "Can you summarize the following details {user_input} from the {section} of the {file_format} well log file in paragraphs?"
