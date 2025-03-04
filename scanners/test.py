@@ -78,7 +78,7 @@ for logical_file in logical_files:
 # map_prompt_template = ChatPromptTemplate.from_messages(
 #     [
 #         ("system", "Your name is mivaa. You need to act like a oil and gas {user_persona} expert. Who has an expertise in well log interpretation and analysis."),
-#         ("human", "Can you summarise following details {user_input} from the {section} of the well log file and also give some insight from the {user_persona} perspective?"),
+#         ("human", "Can you rag following details {user_input} from the {section} of the well log file and also give some insight from the {user_persona} perspective?"),
 #     ]
 # )
 # llm = AzureChatOpenAI(azure_endpoint="https://putc-ds-gpt4.openai.azure.com/",

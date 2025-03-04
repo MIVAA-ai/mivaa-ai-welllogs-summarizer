@@ -8,6 +8,7 @@ from mappings.HeaderMappings import HeaderMapping
 from utils.date_utils import DateUtils
 from pathlib import Path
 from pydantic import ValidationError
+from mappings.WellLogsSections import WellLogsSections
 import numpy as np
 import traceback
 
@@ -47,10 +48,10 @@ class LasScanner:
             # Combine all sections into a single JSON structure
             combined_output = [
                 {
-                    "header": las_headers,
-                    "parameters": las_parameters_data,
-                    "curves": las_curves_headers,
-                    "data": las_curves_data
+                    WellLogsSections.header.value: las_headers,
+                    WellLogsSections.parameters.value: las_parameters_data,
+                    WellLogsSections.curves.value: las_curves_headers,
+                    WellLogsSections.data.value: las_curves_data
                 }
             ]
 

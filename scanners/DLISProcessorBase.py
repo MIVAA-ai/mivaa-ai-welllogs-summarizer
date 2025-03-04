@@ -27,7 +27,7 @@ class DLISProcessorBase:
         Processes the items into a DataFrame and converts to a JSON-like format.
 
         Args:
-            attributes (dict): Mapping of attributes for the summarise DataFrame.
+            attributes (dict): Mapping of attributes for the summary DataFrame.
             units_relevant_columns (list): List of columns for which to extract units.
 
         Returns:

@@ -10,7 +10,7 @@ services:
       - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
       - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
       - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
-      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summarise
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summary
     restart: always
 
   celery:
@@ -26,5 +26,5 @@ services:
       - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
       - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
       - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
-      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summarise
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summary
     restart: always

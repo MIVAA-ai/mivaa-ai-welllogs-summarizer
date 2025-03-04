@@ -20,11 +20,11 @@ _folders = {
 for folder in _folders.values():
     folder.mkdir(exist_ok=True)
 
-# Create 'summarise' folder for the CSV file
-_summary_folder = _root.joinpath("summarise")
+# Create 'summary' folder for the CSV file
+_summary_folder = _root.joinpath("summary")
 _summary_folder.mkdir(exist_ok=True, parents=True)
 
-# Path for the scanned_file.csv in the 'summarise' folder
+# Path for the scanned_file.csv in the summary' folder
 las_csv_path = _summary_folder / "las_scanned_files.csv"
 las_header_file_path = _summary_folder / "las_headers.json"  # Persistent header storage
 dlis_csv_path = _summary_folder / "dlis_scanned_files.csv"

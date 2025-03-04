@@ -1,5 +1,6 @@
 from config.config_exceptions import ConfigLoadError
 from config.config_loader import get_output_settings
+from rag.SummarizeWellLog import SummarizeWellLog
 from . import app
 from utils.SerialiseJson import JsonSerializable
 import os
@@ -13,8 +14,8 @@ from scanners.dlis_scanner import DLISScanner
 from dlisio import dlis
 from utils.logger import Logger
 from datetime import datetime
-from summarise.CSVSummary import CSVSummary
-from summarise.WellLogTextInterpretation import InterpretWellLog
+from rag.CSVSummary import CSVSummary
+from rag.WellLogsChunks import WellLogsChunks
 
 # Convert class name string back to class reference
 scanner_classes = {
@@ -220,14 +221,19 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                 result["status"] = "PARTIALLY SUCCESS"
                 file_logger.info(f"File converted to JSON: {result}")
 
-            #this is where you can add the task to summarise the json file
+            #this is where you can add the task to rag the json file
             if text_interpretation:
-                interpreted_text = InterpretWellLog(
+                welllogs_chunks = WellLogsChunks(
                     result=result,
                     json_data=normalised_json,
                     logger=file_logger
                 )
-                interpreted_text.json_to_text()
+                documents = welllogs_chunks.get_documents()
+
+                well_log_summary = SummarizeWellLog(
+                    documents=documents,
+                    logger=file_logger
+                )
 
             #setting the status as successful if everything is executed sucessfully
             result["status"] = "SUCCESS"

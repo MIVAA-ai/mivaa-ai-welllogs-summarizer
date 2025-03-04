@@ -6,6 +6,7 @@ from scanners.DLISEquipmentsProcessor import DLISEquipmentsProcessor
 from scanners.DLISFramesProcessor import DLISFramesProcessor
 from scanners.DLISZonesProcessor import DLISZoneProcessor
 from utils.dlis_utils import transform_curves_to_json_well_log_format
+from mappings.WellLogsSections import WellLogsSections
 
 
 class DLISLogicalFile:
@@ -117,14 +118,14 @@ class DLISLogicalFile:
 
             # Combine all data into the frame-specific dictionary
             frame_output = {
-                "header": header,
-                "parameters": parameters,
-                "equipments": equipments,
-                "zones": zones,
-                "tools": tools,
-                "frame": frame_data,
-                "curves": formatted_channels,
-                "data": curves
+                WellLogsSections.header.value: header,
+                WellLogsSections.parameters.value: parameters,
+                WellLogsSections.equipments.value: equipments,
+                WellLogsSections.zones.value: zones,
+                WellLogsSections.tools.value: tools,
+                WellLogsSections.frame.value: frame_data,
+                WellLogsSections.curves.value: formatted_channels,
+                WellLogsSections.data.value: curves
             }
 
             combined_output.append(frame_output)
