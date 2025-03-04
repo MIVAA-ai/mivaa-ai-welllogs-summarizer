@@ -234,6 +234,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                     documents=documents,
                     logger=file_logger
                 )
+                well_log_summary.summarise()
 
             #setting the status as successful if everything is executed sucessfully
             result["status"] = "SUCCESS"
