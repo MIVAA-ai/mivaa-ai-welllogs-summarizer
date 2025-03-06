@@ -3,10 +3,10 @@ import yaml
 from dotenv import load_dotenv
 from langchain_openai import AzureChatOpenAI
 from langchain_ollama import ChatOllama
-from pathlib import Path
-from langchain.prompts import ChatPromptTemplate
+from langchain.prompts import PromptTemplate
+from mappings.WellLogsFormat import WellLogFormat
+from mappings.WellLogsSections import WellLogsSections
 from .config_exceptions import ConfigLoadError
-import traceback
 
 # Load environment variables
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,19 +16,6 @@ CONFIG_PATH = os.path.join(script_dir, "config.yaml")
 
 # Function to load YAML configuration
 def _load_config(logger, config_path=CONFIG_PATH):
-    """
-    Reads and parses the unified configuration file.
-
-    Args:
-        logger: Logger instance.
-        config_path (str): Path to the config.yaml file.
-
-    Returns:
-        dict: Parsed YAML content.
-
-    Raises:
-        ConfigLoadError: If the config file is missing or invalid.
-    """
     try:
         with open(config_path, "r") as file:
             return yaml.safe_load(file)
@@ -40,14 +27,8 @@ def _load_config(logger, config_path=CONFIG_PATH):
         raise ConfigLoadError(f"Invalid YAML format in {config_path}")
 
 
-# Function to get Output settings
+# Function to get output settings
 def get_output_settings(logger):
-    """
-    Retrieves the 'output' section from the configuration.
-
-    Returns:
-        dict: Output settings (csv_file, json_file, text_interpretation, extract_bulk).
-    """
     config = _load_config(logger)
     output_config = config.get("output", {})
 
@@ -65,12 +46,6 @@ def get_output_settings(logger):
 
 # Function to get the LLM instance
 def get_active_llm(logger):
-    """
-    Initializes the LLM instance based on the config.
-
-    Returns:
-        LLM instance.
-    """
     config = _load_config(logger)
     llm_config = config.get("llm")
 
@@ -102,25 +77,31 @@ def get_active_llm(logger):
 
 
 # Function to get a prompt template by name
-def get_prompt_template(logger, prompt_name):
-    """
-    Retrieves the specified prompt template.
-
-    Returns:
-        ChatPromptTemplate: The LangChain prompt template.
-    """
+def get_summary_prompt_template(logger, prompt_name):
     config = _load_config(logger)
-    prompts = config.get("prompts", {})
+    summary_prompts = config.get("summary_prompts", {})
 
-    if prompt_name not in prompts:
+    if prompt_name not in summary_prompts:
         logger.error(f"Prompt '{prompt_name}' not found in config.yaml")
         raise ConfigLoadError(f"Prompt '{prompt_name}' not found in config.yaml")
 
-    prompt_data = prompts[prompt_name]
+    template_str = summary_prompts[prompt_name]
 
-    return ChatPromptTemplate.from_messages(
-        [
-            ("system", prompt_data["system"]),
-            ("human", prompt_data["human"]),
-        ]
-    )
+    if "{context}" not in template_str:
+        template_str += "\n\n{context}"
+
+    return PromptTemplate(template=template_str, input_variables=["context"])
+
+# Consolidated function to retrieve summary prompt names
+def get_summary_prompt_name(logger, file_format, subsection_name):
+    format_prompt_map = {
+        WellLogFormat.DLIS.value: "stuff_dlis_paragraph_summary",
+        WellLogFormat.LAS.value: "stuff_chat_las_paragraph_summary"
+    }
+
+    try:
+        prompt_base = format_prompt_map[file_format]
+        return prompt_base
+    except KeyError:
+        logger.error(f"Prompt not found for format: {file_format}, section: {subsection_name}")
+        raise ConfigLoadError(f"Prompt not found for format: {file_format}, section: {subsection_name}")

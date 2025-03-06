@@ -13,10 +13,11 @@ llm:
     temperature: 0
 #    num_predict: 256
 
-prompts:
-  stuff_dlis_header_paragraph_summary:
-    system: "You are an oil and gas upstream industry expert with expertise in well log interpretation and analysis."
-    human: "Can you summarize the following details {user_input} from the headers of the one of the logical file from DLIS well log file."
-  stuff_dlis_sections_paragraph_summary:
-    system: "You are an oil and gas upstream industry expert with expertise in well log interpretation and analysis."
-    human: "Can you summarize the following details {user_input} from the {section} of the one of the logical file from DLIS well log file."
+summary_prompts:
+  stuff_dlis_paragraph_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation
+    and analysis of well logs.
+    Given the following data from a section of a DLIS well log, provide a clear,
+    detailed summary in paragraph format:
+
+    {context}
