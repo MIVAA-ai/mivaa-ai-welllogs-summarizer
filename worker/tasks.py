@@ -109,7 +109,6 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
     Returns:
         dict: Result metadata of processing
     """
-    # instantiating a logger for each file
     # Initialize basic result structure
     filepath = Path(filepath).resolve()
     output_folder = Path(output_folder).resolve()
