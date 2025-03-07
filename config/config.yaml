@@ -15,9 +15,11 @@ llm:
 
 summary_prompts:
   stuff_dlis_paragraph_summary: |
-    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation
-    and analysis of well logs.
-    Given the following data from a section of a DLIS well log, provide a clear,
-    detailed summary in paragraph format:
-
-    {context}
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following data from a section of a DLIS well log, provide a clear, detailed summary in paragraph format.
+  stuff_las_paragraph_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following data from a section of a LAS well log, provide a clear, detailed summary in paragraph format.
+  stuff_welllogs_final_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following details about well log file, provide a clear, detailed summary in paragraph format.

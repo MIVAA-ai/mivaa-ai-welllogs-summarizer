@@ -77,7 +77,7 @@ def get_active_llm(logger):
 
 
 # Function to get a prompt template by name
-def get_summary_prompt_template(logger, prompt_name):
+def get_summary_prompt_template(logger, prompt_name, subsection_name):
     config = _load_config(logger)
     summary_prompts = config.get("summary_prompts", {})
 
@@ -88,7 +88,7 @@ def get_summary_prompt_template(logger, prompt_name):
     template_str = summary_prompts[prompt_name]
 
     if "{context}" not in template_str:
-        template_str += "\n\n{context}"
+        template_str += f"{subsection_name}: {{context}}"
 
     return PromptTemplate(template=template_str, input_variables=["context"])
 
@@ -96,7 +96,8 @@ def get_summary_prompt_template(logger, prompt_name):
 def get_summary_prompt_name(logger, file_format, subsection_name):
     format_prompt_map = {
         WellLogFormat.DLIS.value: "stuff_dlis_paragraph_summary",
-        WellLogFormat.LAS.value: "stuff_chat_las_paragraph_summary"
+        WellLogFormat.LAS.value: "stuff_las_paragraph_summary",
+        "WellLogFinalSummary": "stuff_welllogs_final_summary"
     }
 
     try:

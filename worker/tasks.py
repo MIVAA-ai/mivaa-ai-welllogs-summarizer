@@ -23,8 +23,6 @@ scanner_classes = {
     WellLogFormat.DLIS.value: DLISScanner
 }
 
-
-
 def _extract_curve_names(json_data):
     """
     Extracts unique curve names from the given JSON data.
@@ -190,17 +188,22 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
             and any other header information present in the file, so that it can be updated in csv later 
             and also be used for text summarisation using llm"""
             if csv_output or text_interpretation:
-                file_logger.info(f"Updating the result headers because text summarisation of output to csv is enabled")
+                file_logger.info(f"Updating the result headers because text summarization of output to csv is enabled")
+
                 # Extract Curve Names
                 result["Curve Names"] = _extract_curve_names(normalised_json)
+
                 # Consolidate Headers to include the headers in results.json
                 consolidated_header = _consolidate_headers(normalised_json)
+
                 # Merge result and dynamic headers
                 result.update(consolidated_header)
-                file_logger.info(f"Updated the result headers because text summarisation of output to csv is enabled")
+
+                file_logger.info(f"Updated the result headers because text summarization of output to csv is enabled")
 
             # Serialize JSON data and store it in the json file if the configuration is set
             if json_output:
+
                 file_logger.info(f"Serializing scanned data from {filepath}...")
                 json_bytes = JsonSerializable.to_json_bytes(normalised_json)
 
@@ -223,11 +226,13 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
 
             #this is where you can add the task to rag the json file
             if text_interpretation:
+
                 welllogs_chunks = WellLogsChunks(
                     result=result,
                     json_data=normalised_json,
                     logger=file_logger
                 )
+
                 documents = welllogs_chunks.get_documents()
 
                 well_log_summary = SummarizeWellLog(
@@ -236,7 +241,10 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                 )
                 well_log_summary.summarise()
 
-            #setting the status as successful if everything is executed sucessfully
+                result["status"] = "PARTIALLY SUCCESS"
+                file_logger.info(f"File summarised successfully: {result}")
+
+            #setting the status as successful if everything is executed successfully
             result["status"] = "SUCCESS"
 
             #update the csv only if csv output is enabled

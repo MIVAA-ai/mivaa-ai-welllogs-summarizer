@@ -137,7 +137,7 @@ class WellLogsChunks:
             self._logger.warning(f"Unable to convert dictionaries to dataframe for {subsection_name}: {str(e)}")
             return pd.DataFrame()
 
-    def _get_complete_section_documents(self, file_format, subsections_df, headers, max_rows_per_sub_df=5):
+    def _get_complete_section_documents(self, subsections_df, headers, max_rows_per_sub_df=5):
         """
         Processes each DataFrame subsection by creating smaller sub-DataFrames if necessary,
         then generates summaries using LLM.
@@ -194,17 +194,12 @@ class WellLogsChunks:
                 self._logger.info(
                     f"Generating sub dictionary for {subsection_name} - Sub-section {idx + 1} with {len(sub_df)} rows")
 
-                # #getting the combined subsection summary
-                # summary = self._get_summary_from_llm(subsection_name=subsection_name,
-                #                                      file_format=file_format,
-                #                                      data=sub_dict)
-                #creating a document for this sub section
                 document_content = json.dumps(sub_dict, indent=4)  # Convert to JSON string for better readability
 
                 # Create a LangChain Document object
                 document = Document(
                     page_content=document_content,  # Store structured text
-                    metadata=headers
+                    # metadata=headers
                 )
 
                 subsection_documents.append(document)
@@ -262,8 +257,7 @@ class WellLogsChunks:
                 for sub, df in dlis_subsection_dfs.items():
                     dlis_subsection_dfs[sub] = cluster_dataframe(logger=self._logger, df=df, subsection_name=sub, cluster_columns=cluster_columns[sub])
 
-                documents = self._get_complete_section_documents(file_format=result.get('input_file_format'),
-                                                     subsections_df=dlis_subsection_dfs,
+                documents = self._get_complete_section_documents(subsections_df=dlis_subsection_dfs,
                                                      headers=result)
                 documents[WellLogsSections.header.value] = [Document(page_content=json.dumps(result, indent=4))]
 
