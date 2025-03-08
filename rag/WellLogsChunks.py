@@ -2,6 +2,7 @@ import traceback
 from mappings.WellLogsSections import WellLogsSections
 import pandas as pd
 from mappings.WellLogsFormat import WellLogFormat
+from utils.SerialiseJson import JsonSerializable
 from utils.cluster_dataframe import cluster_dataframe
 import numpy as np
 from langchain_core.documents import Document
@@ -36,24 +37,24 @@ class WellLogsChunks:
         headers = {k: v for k, v in self._result.items() if v is not None}
 
         # Additional cleanup for DLIS format
-        if headers.get('input_file_format') == WellLogFormat.DLIS.value:
-            keys_to_remove = {
-                "status",
-                "message",
-                "FILE-ID",
-                "input_file_creation_user",
-                "input_file_creation_date",
-            }
+        # if headers.get('input_file_format') == WellLogFormat.DLIS.value:
+        keys_to_remove = {
+            "status",
+            "message",
+            "FILE-ID",
+            "input_file_creation_user",
+            "input_file_creation_date",
+        }
 
-            # Dynamically remove keys that start with "output"
-            keys_to_remove.update({key for key in headers if key.startswith("output")})
+        # Dynamically remove keys that start with "output"
+        keys_to_remove.update({key for key in headers if key.startswith("output")})
 
-            # Remove specified keys
-            for key in keys_to_remove:
-                headers.pop(key, None)
+        # Remove specified keys
+        for key in keys_to_remove:
+            headers.pop(key, None)
 
         # Rename "name" to "logical_file_name" if it exists
-        if "name" in headers:
+        if "name" in headers and headers.get('input_file_format') == WellLogFormat.DLIS.value:
             headers["logical_file_name"] = headers.pop("name")
 
         return headers
@@ -209,65 +210,176 @@ class WellLogsChunks:
 
         return documents
 
+    # def get_documents(self):
+    #     """
+    #     Converts JSON well log data into a structured langchain documents object.
+    #
+    #     Args:
+    #         result (dict): JSON header information.
+    #         data (list): JSON well log data.
+    #     """
+    #     try:
+    #         result = self._cleanup_headers()
+    #
+    #         if result.get('input_file_format') == WellLogFormat.DLIS.value:
+    #             dlis_subsections = set()
+    #             for entry in self._json_data:
+    #                 if entry:  # Only process non-empty dictionaries
+    #                     dlis_subsections.update(entry.keys())
+    #                     dlis_subsections.discard(WellLogsSections.data.value)
+    #                     dlis_subsections.discard(WellLogsSections.header.value)
+    #
+    #             combined_data = {sub: [] for sub in dlis_subsections}
+    #
+    #             for sample in self._json_data:
+    #                 for subsection_name in dlis_subsections:
+    #                     combined_data[subsection_name].append(sample.get(subsection_name, []))
+    #
+    #             dlis_subsection_dfs = {sub: self._merge_dicts_to_dataframe(combined_data[sub], sub) for sub in dlis_subsections}
+    #
+    #             # Perform clustering on relevant sections
+    #             cluster_columns = {
+    #                 WellLogsSections.parameters.value: ["name", "description"],
+    #                 WellLogsSections.equipments.value: ["name"],
+    #                 WellLogsSections.tools.value: ["name", "description"],
+    #                 WellLogsSections.zones.value: ["name", "description"],
+    #                 WellLogsSections.frame.value: ["name", "description"],
+    #                 WellLogsSections.curves.value: ["name", "description"]
+    #             }
+    #
+    #             for sub, df in dlis_subsection_dfs.items():
+    #                 dlis_subsection_dfs[sub] = cluster_dataframe(logger=self._logger, df=df, subsection_name=sub, cluster_columns=cluster_columns[sub])
+    #
+    #             documents = self._get_complete_section_documents(subsections_df=dlis_subsection_dfs,
+    #                                                  headers=result)
+    #             documents[WellLogsSections.header.value] = [Document(page_content=json.dumps(JsonSerializable.to_json(result), indent=4))]
+    #
+    #             return documents
+    #
+    #         elif result.get('input_file_format') == WellLogFormat.LAS.value:
+    #             las_subsections = set()
+    #             for entry in self._json_data:
+    #                 if entry:  # Only process non-empty dictionaries
+    #                     las_subsections.update(entry.keys())
+    #                     las_subsections.discard(WellLogsSections.data.value)
+    #                     las_subsections.discard(WellLogsSections.header.value)
+    #
+    #             combined_data = {sub: [] for sub in las_subsections}
+    #
+    #             for sample in self._json_data:
+    #                 for subsection_name in las_subsections:
+    #                     combined_data[subsection_name].append(sample.get(subsection_name, []))
+    #
+    #             las_subsection_dfs = {sub: self._merge_dicts_to_dataframe(combined_data[sub], sub) for sub in las_subsections}
+    #
+    #             # Perform clustering on relevant sections
+    #             cluster_columns = {
+    #                 WellLogsSections.parameters.value: ["name", "description"],
+    #                 WellLogsSections.curves.value: ["name", "description"]
+    #             }
+    #
+    #             for sub, df in las_subsection_dfs.items():
+    #                 las_subsection_dfs[sub] = cluster_dataframe(logger=self._logger, df=df, subsection_name=sub, cluster_columns=cluster_columns[sub])
+    #
+    #             documents = self._get_complete_section_documents(subsections_df=las_subsection_dfs,
+    #                                                  headers=result)
+    #             documents[WellLogsSections.header.value] = [Document(page_content=json.dumps(JsonSerializable.to_json(result), indent=4))]
+    #
+    #             return documents
+    #
+    #
+    #     except Exception as e:
+    #         self._logger.error(f"Error in JSON to text conversion: {str(e)}")
+    #         self._logger.debug(traceback.format_exc())
+    #         raise e
+
+    def _extract_subsections(self):
+        """Extracts relevant subsections from the JSON data based on file format."""
+        exclude_sections = {WellLogsSections.data.value, WellLogsSections.header.value}
+        subsections = set()
+
+        for entry in self._json_data:
+            if entry:
+                subsections.update(entry.keys())
+        subsections -= exclude_sections
+
+        return subsections
+
+    def _generate_subsection_dataframes(self, subsections):
+        """Generates DataFrames for each subsection by merging dictionary data."""
+        combined_data = {sub: [] for sub in subsections}
+
+        for sample in self._json_data:
+            for subsection in subsections:
+                combined_data[subsection].append(sample.get(subsection, []))
+
+        return {
+            sub: self._merge_dicts_to_dataframe(combined_data[sub], sub)
+            for sub in subsections
+        }
+
+    def _get_cluster_columns(self, file_format):
+        """Returns the appropriate clustering columns based on the file format."""
+        if file_format == WellLogFormat.DLIS.value:
+            return {
+                WellLogsSections.parameters.value: ["name", "description"],
+                WellLogsSections.equipments.value: ["name"],
+                WellLogsSections.tools.value: ["name", "description"],
+                WellLogsSections.zones.value: ["name", "description"],
+                WellLogsSections.frame.value: ["name", "description"],
+                WellLogsSections.curves.value: ["name", "description"]
+            }
+        elif file_format == WellLogFormat.LAS.value:
+            return {
+                WellLogsSections.parameters.value: ["name", "description"],
+                WellLogsSections.curves.value: ["name", "description"]
+            }
+
+        return {}
+
+
+    def _perform_clustering(self, file_format, subsection_dfs):
+        """Applies clustering to relevant subsections based on predefined cluster columns."""
+        cluster_columns = self._get_cluster_columns(file_format)
+
+        for subsection, columns in cluster_columns.items():
+            if subsection in subsection_dfs:
+                subsection_dfs[subsection] = cluster_dataframe(
+                    logger=self._logger,
+                    df=subsection_dfs[subsection],
+                    subsection_name=subsection,
+                    cluster_columns=columns
+                )
+
     def get_documents(self):
         """
-        Converts JSON well log data into a structured langchain documents object.
+        Converts JSON well log data into structured LangChain document objects.
 
-        Args:
-            result (dict): JSON header information.
-            data (list): JSON well log data.
+        Returns:
+            dict: Subsection names mapped to lists of LangChain Document objects.
         """
         try:
-            result = self._cleanup_headers()
+            headers = self._cleanup_headers()
+            file_format = headers.get('input_file_format')
 
-            #methods to call llms for summarisation
-            # self._logger.info("Starting the header summarisation")
-            # #directly call _get_summary_from_llm to fix this issue
-            # self._summarise_headers(headers=result)
-            # self._logger.info("Headers summarised successfully")
+            if file_format not in (WellLogFormat.DLIS.value, WellLogFormat.LAS.value):
+                raise ValueError(f"Unsupported file format: {file_format}")
 
-            if result.get('input_file_format') == WellLogFormat.DLIS.value:
+            subsections = self._extract_subsections()
+            subsection_dfs = self._generate_subsection_dataframes(subsections)
 
-                dlis_subsections = set()
-                for entry in self._json_data:
-                    if entry:  # Only process non-empty dictionaries
-                        dlis_subsections.update(entry.keys())
-                        dlis_subsections.discard(WellLogsSections.data.value)
-                        dlis_subsections.discard(WellLogsSections.header.value)
+            self._perform_clustering(file_format, subsection_dfs)
 
-                # dlis_subsections = ["parameters", "equipments", "tools", "zones", "frame", "curves"]
-                combined_data = {sub: [] for sub in dlis_subsections}
+            documents = self._get_complete_section_documents(subsections_df=subsection_dfs, headers=headers)
 
-                for sample in self._json_data:
-                    for subsection_name in dlis_subsections:
-                        combined_data[subsection_name].append(sample.get(subsection_name, []))
+            # Add the header document
+            documents[WellLogsSections.header.value] = [
+                Document(page_content=json.dumps(JsonSerializable.to_json(headers), indent=4))
+            ]
 
-                dlis_subsection_dfs = {sub: self._merge_dicts_to_dataframe(combined_data[sub], sub) for sub in dlis_subsections}
+            return documents
 
-                # Perform clustering on relevant sections
-                cluster_columns = {
-                    WellLogsSections.parameters.value: ["name", "description"],
-                    WellLogsSections.equipments.value: ["name"],
-                    WellLogsSections.tools.value: ["name", "description"],
-                    WellLogsSections.zones.value: ["name", "description"],
-                    WellLogsSections.frame.value: ["name", "description"],
-                    WellLogsSections.curves.value: ["name", "description"]
-                }
-
-                for sub, df in dlis_subsection_dfs.items():
-                    dlis_subsection_dfs[sub] = cluster_dataframe(logger=self._logger, df=df, subsection_name=sub, cluster_columns=cluster_columns[sub])
-
-                documents = self._get_complete_section_documents(subsections_df=dlis_subsection_dfs,
-                                                     headers=result)
-                documents[WellLogsSections.header.value] = [Document(page_content=json.dumps(result, indent=4))]
-
-                return documents
-                # # Save CSV outputs
-                # for sub, df in dlis_subsection_dfs.items():
-                #     file_path = f"F:\PyCharmProjects\mivaa-ai-welllogs-summarizer\processed/{sub}_data.csv"
-                #     df.to_csv(file_path, index=False)
-                #     self._logger.info(f"Saved processed {sub} data to {file_path}")
         except Exception as e:
-            self._logger.error(f"Error in JSON to text conversion: {str(e)}")
+            self._logger.error(f"Error converting JSON to documents: {str(e)}")
             self._logger.debug(traceback.format_exc())
-            raise e
+            raise

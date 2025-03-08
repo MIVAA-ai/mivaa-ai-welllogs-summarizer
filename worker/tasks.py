@@ -97,7 +97,7 @@ def _update_to_csv(file_logger, result):
 @app.task(bind=True)
 def convert_to_json_task(self, filepath, output_folder, file_format, logical_file_id=None):
     """
-    Generic function to convert LAS or 222DLIS files to JSONWellLogFormat.
+    Generic function to convert LAS or DLIS files to JSONWellLogFormat.
 
     Args:
         self: Celery task context
@@ -155,9 +155,9 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
 
 
         output_filename_suffix = logical_file_id if logical_file_id else ""
-        output_interpreted_txt_filename = f"{filepath.stem}{output_filename_suffix}.txt"
+        output_summary_txt_filename = f"{filepath.stem}{output_filename_suffix}.txt"
         output_json_filename = f"{filepath.stem}{output_filename_suffix}.json"
-        output_interpreted_text_file_path = output_folder / output_interpreted_txt_filename
+        output_summary_text_file_path = output_folder / output_summary_txt_filename
         output_json_file_path = output_folder / output_json_filename
 
         #updating the result based on the config
@@ -167,7 +167,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
             result["output_json_file_size"] = "Unknown"
 
         if text_interpretation:
-            result["output_ai_interpreted_text_file"] = str(output_interpreted_text_file_path)
+            result["output_ai_interpreted_text_file"] = str(output_summary_text_file_path)
             result["output_ai_interpreted_text_file_size"] = "Unknown"
 
         try:
@@ -198,6 +198,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                 # Merge result and dynamic headers
                 result.update(consolidated_header)
 
+                result["status"] = "PARTIALLY SUCCESS"
                 file_logger.info(f"Updated the result headers because text summarization of output to csv is enabled")
 
             # Serialize JSON data and store it in the json file if the configuration is set
@@ -225,7 +226,6 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
 
             #this is where you can add the task to rag the json file
             if text_interpretation:
-
                 welllogs_chunks = WellLogsChunks(
                     result=result,
                     json_data=normalised_json,
@@ -234,14 +234,25 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
 
                 documents = welllogs_chunks.get_documents()
 
-                well_log_summary = SummarizeWellLog(
-                    documents=documents,
-                    logger=file_logger
-                )
-                well_log_summary.summarise()
+                if documents is not None:
+                    well_log_summary = SummarizeWellLog(
+                        documents=documents,
+                        logger=file_logger
+                    )
+                    full_summary = well_log_summary.summarise()
 
-                result["status"] = "PARTIALLY SUCCESS"
-                file_logger.info(f"File summarised successfully: {result}")
+                    # Save text to file
+                    file_logger.info(f"Saving summarized data to {output_summary_text_file_path}...")
+
+                    with open(output_summary_text_file_path, "w") as text_file:
+                        summaries_to_write = [
+                            summary for section, summary in full_summary.items() if section != "WellLogFinalSummary"
+                        ]
+                        text_file.write("\n".join(summaries_to_write))
+                    result["status"] = "PARTIALLY SUCCESS"
+                    file_logger.info(f"File summarised successfully: {result}")
+                else:
+                    raise Exception("No documents objects available to summarise data")
 
             #setting the status as successful if everything is executed successfully
             result["status"] = "SUCCESS"
@@ -252,7 +263,6 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                                file_logger=file_logger)
 
             return result
-
         except Exception as e:
             result["status"] = "ERROR"
             result["message"] = f"Error processing {file_format} file: {str(e)}"
@@ -270,7 +280,6 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         file_logger.error(f"Error processing {file_format} file: {e}")
         file_logger.debug(traceback.format_exc())
         return result
-
     except Exception as e:
         result["status"] = "ERROR"
         result["message"] = f"Error processing {file_format} file: {str(e)}"

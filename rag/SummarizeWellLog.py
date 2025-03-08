@@ -63,7 +63,7 @@ class SummarizeWellLog:
             )
 
             final_summary = final_summary_chain.invoke({"context": [Document(page_content=consolidated_text, metadata=header_content)]})
-            summaries["final_summary"] = final_summary
+            summaries["WellLogFinalSummary"] = final_summary
             self._logger.info("Generated final consolidated summary")
 
             return summaries
