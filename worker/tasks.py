@@ -121,7 +121,7 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
         "input_file_path": str(filepath),
         "input_file_size": os.path.getsize(filepath) if filepath.exists() else "N/A",
         "input_file_creation_user": "Unknown",
-        "message": "An error occurred during processing.",
+        "message": "No messages recorded",
     }
 
     log_filename = f'{os.path.basename(str(filepath))}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
@@ -167,8 +167,8 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
             result["output_json_file_size"] = "Unknown"
 
         if text_interpretation:
-            result["output_ai_interpreted_text_file"] = str(output_summary_text_file_path)
-            result["output_ai_interpreted_text_file_size"] = "Unknown"
+            result["output_ai_summary_text_file"] = str(output_summary_text_file_path)
+            result["output_ai_summary_text_file_size"] = "Unknown"
 
         try:
             scanner_cls = scanner_classes[file_format]  # Retrieve actual class
@@ -249,6 +249,11 @@ def convert_to_json_task(self, filepath, output_folder, file_format, logical_fil
                             summary for section, summary in full_summary.items() if section != "WellLogFinalSummary"
                         ]
                         text_file.write("\n".join(summaries_to_write))
+
+                    result.update({
+                        "output_ai_summary_text_file_size": os.path.getsize(
+                            output_summary_text_file_path) if output_summary_text_file_path.exists() else "N/A"
+                    })
                     result["status"] = "PARTIALLY SUCCESS"
                     file_logger.info(f"File summarised successfully: {result}")
                 else:
