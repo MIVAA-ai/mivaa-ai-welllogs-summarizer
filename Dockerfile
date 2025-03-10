@@ -17,5 +17,8 @@ RUN mkdir -p /app/processed /app/uploads /app/logs /app/jobs/in /app/jobs/result
 # Expose any necessary ports (if applicable)
 # EXPOSE 5000
 
+# Expose Streamlit port
+EXPOSE 8501
+
 # Specify the default command
 CMD ["python", "-u", "main.py"]
