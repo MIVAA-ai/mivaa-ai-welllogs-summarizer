@@ -19,9 +19,9 @@ FOLDERS=(
   "$BASE_DIR/processed"
   "$BASE_DIR/uploads"
   "$BASE_DIR/logs"
-  "$BASE_DIR/worker/data/in"
-  "$BASE_DIR/worker/data/results"
-  "$BASE_DIR/worker/data/summary"
+  "$BASE_DIR/jobs/in"
+  "$BASE_DIR/jobs/results"
+  "$BASE_DIR/jobs/summary"
 )
 
 # Create the folders

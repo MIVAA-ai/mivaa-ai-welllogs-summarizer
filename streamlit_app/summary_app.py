@@ -77,6 +77,7 @@ with left_col:
         )
         summary_app_logger.info(f"File selected: {selected_file}")
     else:
+
         st.write("No files available.")
         summary_app_logger.warning("No files found in CSV data.")
         selected_file = None
