@@ -12,8 +12,10 @@ This software utility reads your well logs files (las and dlis) and returns the 
 3. **Install Docker**:
    - Ensure Docker is installed and running on your machine. You can download Docker [here](https://www.docker.com/).
 
-4. **Azure Chat OpenAI GPT Instance**
-   - 
+4. **Azure Chat OpenAI GPT Instance**:
+   - Rename the file "config/credentials.sample" to "config/credentials.env"
+   - Update Azure OpenAI endpoint
+   - Update LangSmith API key, if you want to use LangSmith for monitoring
    
 ## Steps to Run the Application Using the Startup Script
 
@@ -50,14 +52,12 @@ This software utility reads your well logs files (las and dlis) and returns the 
 - **Uploads Directory**:
   Place your LAS and DLIS files in the directory specified in the `UPLOADS_VOLUME` path in your `.env` file.
 - **Processed Directory**:
-  The processed JSON files will be saved in the directory specified in the `PROCESSED_VOLUME` path.
-- **Scanned Files Summary**:
-  A scanned file summary is saved in `worker/data/summary/dlis_scanned_files.csv` for dlis data.
-  A scanned file summary is saved in `worker/data/summary/las_scanned_files.csv` for las data.  
+  The processed JSON files and TXT files (summary generated using LLM) will be saved in the directory specified in the `PROCESSED_VOLUME` path.
+- **CSV Files**:
+  A CSV file for dlis is saved in `jobs/summary/dlis_scanned_files.csv`.
+  A CSV file for las is saved in `jobs/summary/las_scanned_files.csv`.  
 - **Processing Logs**:
-  Detailed processing logs are saved in `worker/data/results`.
-- **Converted Output**:
-  Converted files in JSON Well Log Format are saved in the `processed` folder specified by `PROCESSED_VOLUME`.
+  Detailed processing logs are saved in `logs` folder.
 
 ## Additional Resources
 
@@ -70,6 +70,7 @@ This software utility reads your well logs files (las and dlis) and returns the 
 ## Troubleshooting
 
 - Ensure the directories specified in the `.env` file exist and are accessible by Docker.
+- Ensure that Azure OpenAI credentials are updated in `credentials.env` file. 
 - Check the Docker logs for errors:
   ```bash
   docker-compose logs
