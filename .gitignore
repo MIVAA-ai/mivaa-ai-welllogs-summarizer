@@ -1,0 +1,10 @@
+.idea
+/.venv/
+/uploads/
+/sample-data/
+/processed/
+/worker/data/
+/control
+/samples
+/jobs
+/config/credentials.env

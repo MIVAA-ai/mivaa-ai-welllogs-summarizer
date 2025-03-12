@@ -1,0 +1,49 @@
+services:
+  watcher:
+    build:
+      context: .
+    container_name: file_watcher
+    command: python -u /app/main.py
+    volumes:
+      - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
+      - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
+      - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summary
+    restart: always
+
+  celery:
+    build:
+      context: .
+    container_name: celery_worker
+    command: celery -A worker.tasks worker --loglevel=info
+    depends_on:
+      - watcher
+    volumes:
+      - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
+      - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
+      - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summary
+    restart: always
+
+  streamlit_app:
+    build:
+      context: .
+    container_name: streamlit_ui
+    command: python -m streamlit run /app/streamlit_app/summary_app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ${PROCESSED_VOLUME:?Environment variable PROCESSED_VOLUME is not set}:/app/processed
+      - ${UPLOADS_VOLUME:?Environment variable UPLOADS_VOLUME is not set}:/app/uploads
+      - ${LOGS_VOLUME:?Environment variable LOGS_VOLUME is not set}:/app/logs
+      - ${DATA_IN_VOLUME:?Environment variable DATA_IN_VOLUME is not set}:/app/jobs/in
+      - ${DATA_RESULTS_VOLUME:?Environment variable DATA_RESULTS_VOLUME is not set}:/app/jobs/results
+      - ${SUMMARY_VOLUME:?Environment variable SUMMARY_VOLUME is not set}:/app/jobs/summary
+    restart: always
+    depends_on:
+      - watcher
+      - celery

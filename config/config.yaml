@@ -1,0 +1,25 @@
+output:
+  csv_file: true
+  json_file: true
+  text_interpretation: true
+  extract_bulk: false
+
+llm:
+  provider: AzureChatOpenAI  # Options: AzureChatOpenAI, ChatOllama
+  azure:
+    temperature: 0  # Other Azure-specific params
+  ollama:
+    model: "llama3.2:3b"
+    temperature: 0
+#    num_predict: 256
+
+summary_prompts:
+  stuff_dlis_paragraph_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following data from a section of a DLIS well log, provide a clear, detailed summary in paragraph format.
+  stuff_las_paragraph_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following data from a section of a LAS well log, provide a clear, detailed summary in paragraph format.
+  stuff_welllogs_final_summary: |
+    You are an expert in the oil and gas upstream industry, specializing in detailed interpretation and analysis of well logs.
+    Given the following details about well log file, provide a clear, detailed summary in paragraph format.
