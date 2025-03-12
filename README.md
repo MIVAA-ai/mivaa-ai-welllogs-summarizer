@@ -4,7 +4,7 @@ This software utility reads your well logs files (las and dlis) and returns the 
 ## Prerequisites
 
 1. **Download the Repository**:
-   - [Clone](https://github.com/MIVAA-ai/mivaa-las-dlis-to-json-convertor.git) or download the repository as a [ZIP](https://github.com/MIVAA-ai/mivaa-las-dlis-to-json-convertor/archive/refs/heads/main.zip) file.
+   - [Clone](https://github.com/MIVAA-ai/mivaa-ai-welllogs-summarizer.git) or download the repository as a [ZIP](https://github.com/MIVAA-ai/mivaa-ai-welllogs-summarizer/archive/refs/heads/main.zip) file.
 
 2. **Unzip the Repository**:
    - Extract the downloaded ZIP file to a folder on your system.
