@@ -64,8 +64,8 @@ This software utility reads your well logs files (las and dlis) and returns the 
 - **Blog**:
   Read the detailed blog post about this application: [https://deepdatawithmivaa.com/2025/02/06/upgrade-your-well-log-data-workflow-vol-2-from-dlis-and-las-2-0-to-json/]
 
-- **JSON Well Log Format**:
-  Details about JSON Well Log Format: [https://jsonwelllogformat.org/]
+- **Quick Demo**:
+  Quick Demo of solution is available on YouTube: [https://youtu.be/g47EUxpg--g]
 
 ## Troubleshooting
 
